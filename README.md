@@ -34,7 +34,7 @@ go install github.com/WoodProgrammer/OpenMetricMigrator@latest
 Run the tool with the required options:
 
 ```sh
-./openmetricmigrator --input input-file.prom --output output-file.prom
+./openmetricmigrator --input input-file.prom --output output-file.prom --targetdir target-dir
 ```
 
 ### Available Flags
@@ -42,7 +42,7 @@ Run the tool with the required options:
 
 ```sh
 
-CLI tool to export Prometheus data in OpenMetrics format 
+CLI tool to export Prometheus data in OpenMetrics format
 
 Usage:
   promcli [flags]
@@ -56,6 +56,7 @@ Flags:
   -q, --query string       PromQL query
   -s, --start string       Start timestamp (epoch) (default "0")
   -t, --step string        Query step (default "15s")
+  -T, --targetdir string   Target prometheus data directory
 
 ```
 
