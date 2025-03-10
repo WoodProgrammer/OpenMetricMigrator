@@ -32,7 +32,6 @@ func CallPrometheus() {
 	if !strings.Contains(query, "\"") {
 		query = strings.ReplaceAll(query, "{", "{job=\"") // Example fix
 	}
-
 	url := fmt.Sprintf("http://%s:%s/api/v1/query_range?query=%s&start=%s&end=%s&step=%s",
 		promHost, promPort, query, startStamp, endStamp, step)
 	fmt.Println("The url is ", url)
@@ -55,10 +54,9 @@ func CallPrometheus() {
 	fileName := fmt.Sprintf("%s/data-%s", dataDir, startStamp)
 	cmd.FileHandler(fileName, rawMetricData)
 
-	if importstatus {
+	if len(targetDir) != 0 {
 		newPrometheusClient.ImportPrometheusData(fileName, targetDir)
 	}
-
 }
 
 func main() {
@@ -76,8 +74,7 @@ func main() {
 	rootCmd.Flags().StringVarP(&query, "query", "q", "", "PromQL query")
 	rootCmd.Flags().StringVarP(&step, "step", "t", "15s", "Query step")
 	rootCmd.Flags().StringVarP(&dataDir, "directory", "d", "data", "Data directory to export")
-	rootCmd.Flags().StringVarP(&targetDir, "td", "k", "", "Target prometheus data directory")
-	rootCmd.Flags().BoolVarP(&importstatus, "import", "i", true, "Import or not")
+	rootCmd.Flags().StringVarP(&targetDir, "targetdir", "T", "", "Target prometheus data directory")
 
 	rootCmd.MarkFlagRequired("start")
 	rootCmd.MarkFlagRequired("end")

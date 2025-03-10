@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os/exec"
 
@@ -54,24 +54,15 @@ func (promClient *PromClient) ImportPrometheusData(file, targetDir string) error
 	return nil
 }
 
-func (promClient *PromClient) ExecutePromtoolCommand(args ...string) (string, error) {
-	cmd := exec.Command("promtool tsdb create-blocks-from openmetrics", args...)
+func (promClient *PromClient) ExecutePromtoolCommand(sourceDir, targetDir string) (string, error) {
+	cmd := exec.Command("promtool", "tsdb", "create-blocks-from", "openmetrics", sourceDir, targetDir)
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	output, err := cmd.CombinedOutput()
 
-	err := cmd.Run()
-
-	exitCode := 0
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
-		} else {
-			exitCode = -1
-		}
-		return stderr.String(), fmt.Errorf("command failed with exit code %d: %s", exitCode, stderr.String())
+		log.Fatalf("cmd.Run() failed with %s\n", err)
 	}
+	fmt.Printf("combined out:\n%s\n", string(output))
 
-	return stdout.String(), nil
+	return string(output), err
 }
