@@ -8,6 +8,7 @@ import (
 	"github.com/WoodProgrammer/prom-migrator/cmd"
 	prom "github.com/WoodProgrammer/prom-migrator/cmd"
 	source "github.com/WoodProgrammer/prom-migrator/lib"
+	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/cobra"
 )
@@ -48,7 +49,7 @@ func CallPrometheus() {
 
 	err := ensureDir(dataDir)
 	if err != nil {
-		source.LogErrorWithLine(err, "Error in ensureDir method")
+		log.Err(err).Msg("Error in ensureDir method")
 	}
 
 	fileName := fmt.Sprintf("%s/data-%s", dataDir, startStamp)
@@ -81,7 +82,7 @@ func main() {
 	rootCmd.MarkFlagRequired("query")
 
 	if err := rootCmd.Execute(); err != nil {
-		source.LogErrorWithLine(err, "CLI execution failed")
+		log.Err(err).Msg("CLI execution failed")
 		os.Exit(1)
 	}
 }
