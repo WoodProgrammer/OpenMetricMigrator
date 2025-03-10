@@ -79,3 +79,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contact
 
 For any questions or feedback, feel free to open an issue on GitHub.
+
+## TO DO ;
+
+* Adjustable command args
+* Enrich configuration details
+* E2E Automated tests for per release
