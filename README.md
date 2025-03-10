@@ -1,4 +1,4 @@
-<div><img src="docs/img/image.png"/><h1>Open Metric Converter Prometheus</h1></div>
+<div><img src="docs/img/image.png" width="100"/><h1>Open Metric Converter Prometheus</h1></div>
 
 OpenMetricMigrator is a tool designed to migrate and transform OpenMetrics data efficiently. It simplifies the process of converting metric formats and moving data between monitoring systems.
 
