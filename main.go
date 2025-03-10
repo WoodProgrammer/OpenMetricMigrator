@@ -13,13 +13,15 @@ import (
 )
 
 var (
-	promHost   string
-	promPort   string
-	startStamp string
-	endStamp   string
-	query      string
-	step       string
-	dataDir    string
+	promHost     string
+	promPort     string
+	startStamp   string
+	endStamp     string
+	query        string
+	step         string
+	dataDir      string
+	importstatus bool
+	targetDir    string
 )
 
 func CallPrometheus() {
@@ -33,7 +35,7 @@ func CallPrometheus() {
 
 	url := fmt.Sprintf("http://%s:%s/api/v1/query_range?query=%s&start=%s&end=%s&step=%s",
 		promHost, promPort, query, startStamp, endStamp, step)
-
+	fmt.Println("The url is ", url)
 	data := newPrometheusClient.FetchPrometheusData(url)
 	rawMetricData = append(rawMetricData, fmt.Sprintf("# TYPE %s counter", strings.Split(query, "{")[0]))
 
@@ -53,6 +55,10 @@ func CallPrometheus() {
 	fileName := fmt.Sprintf("%s/data-%s", dataDir, startStamp)
 	cmd.FileHandler(fileName, rawMetricData)
 
+	if importstatus {
+		newPrometheusClient.ImportPrometheusData(fileName, targetDir)
+	}
+
 }
 
 func main() {
@@ -70,6 +76,8 @@ func main() {
 	rootCmd.Flags().StringVarP(&query, "query", "q", "", "PromQL query")
 	rootCmd.Flags().StringVarP(&step, "step", "t", "15s", "Query step")
 	rootCmd.Flags().StringVarP(&dataDir, "directory", "d", "data", "Data directory to export")
+	rootCmd.Flags().StringVarP(&targetDir, "td", "k", "", "Target prometheus data directory")
+	rootCmd.Flags().BoolVarP(&importstatus, "import", "i", true, "Import or not")
 
 	rootCmd.MarkFlagRequired("start")
 	rootCmd.MarkFlagRequired("end")
