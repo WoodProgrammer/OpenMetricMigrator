@@ -58,7 +58,7 @@ func CallPrometheus() {
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "promcli",
-		Short: "CLI to fetch Prometheus data",
+		Short: "CLI tool to export Prometheus data in OpenMetrics format",
 		Run: func(cmd *cobra.Command, args []string) {
 			CallPrometheus()
 		},
