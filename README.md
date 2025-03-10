@@ -18,8 +18,7 @@ To install OpenMetricMigrator, clone the repository and build the project:
 git clone https://github.com/WoodProgrammer/OpenMetricMigrator.git
 cd OpenMetricMigrator
 
-# Build the project
-make build
+go build .
 ```
 
 Alternatively, you can install it using Go:
