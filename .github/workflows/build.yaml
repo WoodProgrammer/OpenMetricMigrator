@@ -27,7 +27,7 @@ jobs:
         uses: goreleaser/goreleaser-action@master
         with:
           version: latest
-          args: release --rm-dist --config=build/.goreleaser.yml
+          args: release --config=build/.goreleaser.yml
         env:
           GITHUB_TOKEN: ${{ secrets.OPEN_METRICS_RELEASE_TOKEN }}
 
