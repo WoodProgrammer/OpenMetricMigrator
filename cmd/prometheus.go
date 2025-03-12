@@ -6,12 +6,11 @@ import (
 	"net/http"
 	"os/exec"
 
-	lib "github.com/WoodProgrammer/prom-migrator/lib"
 	"github.com/rs/zerolog/log"
 )
 
 type Prometheus interface {
-	FetchPrometheusData(url string) lib.PrometheusData
+	FetchPrometheusData(url string) map[string]interface{}
 	ImportPrometheusData(file, targetDir string) error
 	ExecutePromtoolCommand(args ...string) (string, error)
 }
@@ -19,8 +18,8 @@ type Prometheus interface {
 type PromClient struct {
 }
 
-func (promClient *PromClient) FetchPrometheusData(url string) lib.PrometheusData {
-	var metric lib.PrometheusData
+func (promClient *PromClient) FetchPrometheusData(url string) map[string]interface{} {
+	var metric map[string]interface{}
 
 	resp, err := http.Get(url)
 	if err != nil {
