@@ -10,7 +10,7 @@ import (
 )
 
 type Prometheus interface {
-	FetchPrometheusData(url string) map[string]interface{}
+	FetchPrometheusData(url string) (int, map[string]interface{})
 	ImportPrometheusData(file, targetDir string) error
 	ExecutePromtoolCommand(args ...string) (string, error)
 }
@@ -18,7 +18,7 @@ type Prometheus interface {
 type PromClient struct {
 }
 
-func (promClient *PromClient) FetchPrometheusData(url string) map[string]interface{} {
+func (promClient *PromClient) FetchPrometheusData(url string) (int, map[string]interface{}) {
 	var metric map[string]interface{}
 
 	resp, err := http.Get(url)
@@ -30,16 +30,16 @@ func (promClient *PromClient) FetchPrometheusData(url string) map[string]interfa
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Err(err).Msg("Error while reading response")
-		return metric
+		return resp.StatusCode, metric
 	}
 
 	err = json.Unmarshal([]byte(body), &metric)
 	if err != nil {
 		log.Err(err).Msg("Error while marshaling metric data")
-		return metric
+		return resp.StatusCode, metric
 	}
 
-	return metric
+	return resp.StatusCode, metric
 }
 
 func (promClient *PromClient) ImportPrometheusData(file, targetDir string) error {
@@ -54,7 +54,6 @@ func (promClient *PromClient) ImportPrometheusData(file, targetDir string) error
 
 func (promClient *PromClient) ExecutePromtoolCommand(sourceDir, targetDir string) (string, error) {
 	cmd := exec.Command("promtool", "tsdb", "create-blocks-from", "openmetrics", sourceDir, targetDir)
-
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Err(err).Msg("cmd.Run() failed with \n")

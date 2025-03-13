@@ -24,6 +24,7 @@ var (
 	dataDir      string
 	importstatus bool
 	targetDir    string
+	metricType   string
 )
 
 func CallPrometheus() {
@@ -36,8 +37,14 @@ func CallPrometheus() {
 	}
 	url := fmt.Sprintf("http://%s:%s/api/v1/query_range?query=%s&start=%s&end=%s&step=%s",
 		promHost, promPort, query, startStamp, endStamp, step)
-	data := newPrometheusClient.FetchPrometheusData(url)
-	rawMetricData = append(rawMetricData, fmt.Sprintf("# TYPE %s counter", strings.Split(query, "{")[0]))
+	status, data := newPrometheusClient.FetchPrometheusData(url)
+
+	if status != 200 {
+		err := errors.New(fmt.Sprintf("un expected response from Prometheus server %d", status))
+		log.Err(err).Msg("Error while running newPrometheusClient.FetchPrometheusData")
+		return
+	}
+	rawMetricData = append(rawMetricData, fmt.Sprintf("# TYPE %s %s", strings.Split(query, "{")[0], metricType))
 
 	parsedData, ok := data["data"].(map[string]interface{})
 
@@ -60,9 +67,9 @@ func CallPrometheus() {
 		if !ok {
 			continue
 		}
+
 		labelMap := []string{}
 		metric, ok := result["metric"].(map[string]interface{})
-
 		metricName, ok := metric["__name__"].(string)
 		if ok {
 			for key, value := range metric {
@@ -78,7 +85,7 @@ func CallPrometheus() {
 				for _, v := range values {
 					valArr, ok := v.([]interface{})
 					if ok && len(valArr) == 2 {
-						tmpData := fmt.Sprintf("%s %v %v", query, valArr[0], valArr[1])
+						tmpData := fmt.Sprintf("%s %v %f", query, valArr[1], valArr[0])
 						rawMetricData = append(rawMetricData, tmpData)
 					}
 				}
@@ -94,9 +101,9 @@ func CallPrometheus() {
 	}
 
 	fileName := fmt.Sprintf("%s/data-%s", dataDir, startStamp)
-	cmd.FileHandler(fileName, rawMetricData)
 
 	if len(targetDir) != 0 {
+		cmd.FileHandler(fileName, rawMetricData)
 		newPrometheusClient.ImportPrometheusData(fileName, targetDir)
 	}
 }
@@ -117,6 +124,7 @@ func main() {
 	rootCmd.Flags().StringVarP(&step, "step", "t", "15s", "Query step")
 	rootCmd.Flags().StringVarP(&dataDir, "directory", "d", "data", "Data directory to export")
 	rootCmd.Flags().StringVarP(&targetDir, "targetdir", "T", "", "Target prometheus data directory")
+	rootCmd.Flags().StringVarP(&metricType, "metrictype", "m", "counter", "Type of metrics like counter|gauge")
 
 	rootCmd.MarkFlagRequired("start")
 	rootCmd.MarkFlagRequired("end")
