@@ -45,18 +45,19 @@ Run the tool with the required options:
 CLI tool to export Prometheus data in OpenMetrics format
 
 Usage:
-  promcli [flags]
+  openmetricmigrator [flags]
 
 Flags:
-  -d, --directory string   Data directory to export (default "data")
-  -e, --end string         End timestamp (epoch) (default "0")
-  -h, --help               help for promcli
-  -H, --host string        Prometheus host (default "localhost")
-  -P, --port string        Prometheus port (default "9090")
-  -q, --query string       PromQL query
-  -s, --start string       Start timestamp (epoch) (default "0")
-  -t, --step string        Query step (default "15s")
-  -T, --targetdir string   Target prometheus data directory
+  -d, --directory string    Data directory to export (default "data")
+  -e, --end string          End timestamp (epoch) (default "0")
+  -h, --help                help for openmetricmigrator
+  -H, --host string         Prometheus host (default "localhost")
+  -m, --metrictype string   Type of metrics like counter|gauge (default "counter")
+  -P, --port string         Prometheus port (default "9090")
+  -q, --query string        PromQL query
+  -s, --start string        Start timestamp (epoch) (default "0")
+  -t, --step string         Query step (default "15s")
+  -T, --targetdir string    Target prometheus data directory
 
 ```
 
