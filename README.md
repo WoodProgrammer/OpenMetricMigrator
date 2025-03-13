@@ -66,7 +66,7 @@ Flags:
 Convert an OpenMetrics file to a Prometheus-compatible format:
 
 ```sh
-./prom-migrator -H localhost -P 9090 -s 1741484483 -e 1741488083 -q 'up{job="prometheus"}'
+./openmetricmigrator -H localhost -P 9090 -s 1741484483 -e 1741488083 -q 'up{job="prometheus"}'
 ```
 
 ## Contributing
