@@ -75,7 +75,7 @@ func CallPrometheus() {
 		msg := val.(map[string]interface{})
 		tmpData := fmt.Sprintf("%v", msg["mt"])
 		lengthOfMigration = lengthOfMigration + len(tmpData)
-		log.Info().Msgf("Migrating this %d", lengthOfMigration)
+		log.Info().Msgf("Size of migrated chunks:: %d", lengthOfMigration)
 		if msg["mt"] != nil {
 			rawMetricData = append(rawMetricData, tmpData)
 		}
