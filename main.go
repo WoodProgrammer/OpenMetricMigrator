@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -27,9 +26,15 @@ var (
 	metricType   string
 )
 
+func newPrometheusHandler(host string) prom.Prometheus {
+	return &prom.PromHandler{}
+}
+
 func CallPrometheus() {
 	ch := make(chan map[string]interface{})
-	newPrometheusClient := prom.PromClient{}
+	var promHandler prom.Prometheus
+
+	promHandler = newPrometheusHandler(promHost)
 	rawMetricData := []string{}
 
 	if !strings.Contains(query, "\"") {
@@ -37,11 +42,11 @@ func CallPrometheus() {
 	}
 	url := fmt.Sprintf("http://%s:%s/api/v1/query_range?query=%s&start=%s&end=%s&step=%s",
 		promHost, promPort, query, startStamp, endStamp, step)
-	status, data := newPrometheusClient.FetchPrometheusData(url)
+	status, data := promHandler.FetchPrometheusData(url)
 
 	if status != 200 {
-		err := errors.New(fmt.Sprintf("un expected response from Prometheus server %d", status))
-		log.Err(err).Msg("Error while running newPrometheusClient.FetchPrometheusData")
+		err := fmt.Errorf("un expected response from Prometheus server %d", status)
+		log.Err(err).Msg("Error while running promHandler.FetchPrometheusData")
 		return
 	}
 	rawMetricData = append(rawMetricData, fmt.Sprintf("# TYPE %s %s", strings.Split(query, "{")[0], metricType))
@@ -49,22 +54,54 @@ func CallPrometheus() {
 	parsedData, ok := data["data"].(map[string]interface{})
 
 	if !ok {
-		err := errors.New("json parsing error on rawPrometheus data ")
+		err := fmt.Errorf("json parsing error on rawPrometheus data ")
 		log.Err(err).Msg("Error parsing 'data'")
 		return
 	}
 
 	results, ok := parsedData["result"].([]interface{})
 	if !ok {
-		err := errors.New("json parsing error on parsedData['result'] data ")
+		err := fmt.Errorf("json parsing error on parsedData['result'] data ")
 		log.Err(err).Msg("Error parsing 'result'")
 		return
 	}
 
 	for _, r := range results {
 
+		result, ok := r.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		labelMap := []string{}
+		metric, ok := result["metric"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		metricName, ok := metric["__name__"].(string)
+		if ok {
+			for key, value := range metric {
+
+				if key != "__name__" {
+					labelMap = append(labelMap, fmt.Sprintf(`%s="%s"`, key, value))
+				}
+			}
+			query := fmt.Sprintf(`%s{%s}`, metricName, strings.Join(labelMap, ","))
+
+			values, ok := result["values"].([]interface{})
+			if ok {
+				for _, v := range values {
+					valArr, ok := v.([]interface{})
+					if ok && len(valArr) == 2 {
+						tmpData := fmt.Sprintf("%s %v %f", query, valArr[1], valArr[0])
+						rawMetricData = append(rawMetricData, tmpData)
+					}
+				}
+			}
+		}
+
 	}
-	rawMetricData = append(rawMetricData, fmt.Sprintf("# EOF"))
+	rawMetricData = append(rawMetricData, "# EOF")
 
 	err := ensureDir(dataDir)
 	if err != nil {
@@ -75,7 +112,7 @@ func CallPrometheus() {
 
 	if len(targetDir) != 0 {
 		cmd.FileHandler(fileName, rawMetricData)
-		newPrometheusClient.ImportPrometheusData(fileName, targetDir)
+		promHandler.ImportPrometheusData(fileName, targetDir)
 	}
 }
 
