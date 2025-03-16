@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os/exec"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -13,6 +14,7 @@ import (
 type Prometheus interface {
 	FetchPrometheusData(url string) (int, map[string]interface{})
 	ImportPrometheusData(file, targetDir string) error
+	ParsePrometheusMetric(ch chan interface{})
 	ExecutePromtoolCommand(sourceDir, targetDir string) (string, error)
 }
 
@@ -60,4 +62,34 @@ func (promHandler *PromHandler) ExecutePromtoolCommand(sourceDir, targetDir stri
 		log.Err(err).Msg("cmd.Run() failed with \n")
 	}
 	return string(output), err
+}
+
+func (promHandler *PromHandler) ParsePrometheusMetric(ch chan interface{}) {
+	r := <-ch
+	result, _ := r.(map[string]interface{})
+
+	labelMap := []string{}
+	metric, ok := result["metric"].(map[string]interface{})
+	metricName, ok := metric["__name__"].(string)
+	if ok {
+		for key, value := range metric {
+			if key != "__name__" {
+				labelMap = append(labelMap, fmt.Sprintf(`%s="%s"`, key, value))
+			}
+		}
+		query := fmt.Sprintf(`%s{%s}`, metricName, strings.Join(labelMap, ","))
+
+		values, ok := result["values"].([]interface{})
+		if ok {
+			for _, v := range values {
+				valArr, ok := v.([]interface{})
+				if ok && len(valArr) == 2 {
+					tmpData := map[string]interface{}{"mt": fmt.Sprintf("%s %v %f", query, valArr[1], valArr[0])}
+					ch <- tmpData
+				}
+			}
+		}
+		close(ch)
+	}
+
 }

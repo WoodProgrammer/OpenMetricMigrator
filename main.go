@@ -14,16 +14,15 @@ import (
 )
 
 var (
-	promHost     string
-	promPort     string
-	startStamp   string
-	endStamp     string
-	query        string
-	step         string
-	dataDir      string
-	importstatus bool
-	targetDir    string
-	metricType   string
+	promHost   string
+	promPort   string
+	startStamp string
+	endStamp   string
+	query      string
+	step       string
+	dataDir    string
+	targetDir  string
+	metricType string
 )
 
 func newPrometheusHandler(host string) prom.Prometheus {
@@ -33,6 +32,7 @@ func newPrometheusHandler(host string) prom.Prometheus {
 func CallPrometheus() {
 
 	var promHandler prom.Prometheus
+
 	promHandler = newPrometheusHandler(promHost)
 	rawMetricData := []string{}
 
@@ -65,40 +65,20 @@ func CallPrometheus() {
 		return
 	}
 
+	ch := make(chan interface{}, len(results))
 	for _, r := range results {
-
-		result, ok := r.(map[string]interface{})
-		if !ok {
-			continue
+		ch <- r
+		go promHandler.ParsePrometheusMetric(ch)
+	}
+	lengthOfMigration := 0
+	for val := range ch {
+		msg := val.(map[string]interface{})
+		tmpData := fmt.Sprintf("%v", msg["mt"])
+		lengthOfMigration = lengthOfMigration + len(tmpData)
+		log.Info().Msgf("Size of migrated chunks:: %d", lengthOfMigration)
+		if msg["mt"] != nil {
+			rawMetricData = append(rawMetricData, tmpData)
 		}
-
-		labelMap := []string{}
-		metric, ok := result["metric"].(map[string]interface{})
-		if !ok {
-			continue
-		}
-		metricName, ok := metric["__name__"].(string)
-		if ok {
-			for key, value := range metric {
-
-				if key != "__name__" {
-					labelMap = append(labelMap, fmt.Sprintf(`%s="%s"`, key, value))
-				}
-			}
-			query := fmt.Sprintf(`%s{%s}`, metricName, strings.Join(labelMap, ","))
-
-			values, ok := result["values"].([]interface{})
-			if ok {
-				for _, v := range values {
-					valArr, ok := v.([]interface{})
-					if ok && len(valArr) == 2 {
-						tmpData := fmt.Sprintf("%s %v %f", query, valArr[1], valArr[0])
-						rawMetricData = append(rawMetricData, tmpData)
-					}
-				}
-			}
-		}
-
 	}
 	rawMetricData = append(rawMetricData, "# EOF")
 
@@ -116,6 +96,7 @@ func CallPrometheus() {
 }
 
 func main() {
+
 	var rootCmd = &cobra.Command{
 		Use:   "openmetricmigrator",
 		Short: "CLI tool to export Prometheus data in OpenMetrics format",
