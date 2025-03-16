@@ -14,7 +14,7 @@ import (
 type Prometheus interface {
 	FetchPrometheusData(url string) (int, map[string]interface{})
 	ImportPrometheusData(file, targetDir string) error
-	ParsePrometheusMetric(r interface{}, ch chan interface{}) []string
+	ParsePrometheusMetric(r interface{}, ch chan string)
 	ExecutePromtoolCommand(sourceDir, targetDir string) (string, error)
 }
 
@@ -64,8 +64,7 @@ func (promHandler *PromHandler) ExecutePromtoolCommand(sourceDir, targetDir stri
 	return string(output), err
 }
 
-func (promHandler *PromHandler) ParsePrometheusMetric(r interface{}, ch chan interface{}) []string {
-	rawMetricData := []string{}
+func (promHandler *PromHandler) ParsePrometheusMetric(r interface{}, ch chan string) {
 	result, _ := r.(map[string]interface{})
 
 	labelMap := []string{}
@@ -86,10 +85,10 @@ func (promHandler *PromHandler) ParsePrometheusMetric(r interface{}, ch chan int
 				valArr, ok := v.([]interface{})
 				if ok && len(valArr) == 2 {
 					tmpData := fmt.Sprintf("%s %v %f", query, valArr[1], valArr[0])
-					rawMetricData = append(rawMetricData, tmpData)
+					ch <- tmpData
 				}
 			}
 		}
 	}
-	return rawMetricData
+
 }
