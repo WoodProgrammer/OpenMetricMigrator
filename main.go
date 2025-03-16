@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/WoodProgrammer/prom-migrator/cmd"
 	prom "github.com/WoodProgrammer/prom-migrator/cmd"
@@ -25,7 +24,6 @@ var (
 	targetDir  string
 	metricType string
 )
-var mutex sync.Mutex
 
 func newPrometheusHandler(host string) prom.Prometheus {
 	return &prom.PromHandler{}
@@ -76,7 +74,6 @@ func CallPrometheus() {
 	for val := range ch {
 		msg := val.(map[string]interface{})
 		fmt.Println(msg["mt"])
-
 		if msg["mt"] != nil {
 			fmt.Println(msg["mt"])
 			rawMetricData = append(rawMetricData, fmt.Sprintf("%v", msg["mt"]))
