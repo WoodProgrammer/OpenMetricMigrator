@@ -70,13 +70,14 @@ func CallPrometheus() {
 		ch <- r
 		go promHandler.ParsePrometheusMetric(ch)
 	}
-
+	lengthOfMigration := 0
 	for val := range ch {
 		msg := val.(map[string]interface{})
-		fmt.Println(msg["mt"])
+		tmpData := fmt.Sprintf("%v", msg["mt"])
+		lengthOfMigration = lengthOfMigration + len(tmpData)
+		log.Info().Msgf("Migrating this %d", lengthOfMigration)
 		if msg["mt"] != nil {
-			fmt.Println(msg["mt"])
-			rawMetricData = append(rawMetricData, fmt.Sprintf("%v", msg["mt"]))
+			rawMetricData = append(rawMetricData, tmpData)
 		}
 	}
 	rawMetricData = append(rawMetricData, "# EOF")
