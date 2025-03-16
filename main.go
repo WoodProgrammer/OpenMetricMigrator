@@ -28,7 +28,7 @@ var (
 )
 
 func CallPrometheus() {
-
+	ch := make(chan map[string]interface{})
 	newPrometheusClient := prom.PromClient{}
 	rawMetricData := []string{}
 
@@ -63,35 +63,6 @@ func CallPrometheus() {
 
 	for _, r := range results {
 
-		result, ok := r.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		labelMap := []string{}
-		metric, ok := result["metric"].(map[string]interface{})
-		metricName, ok := metric["__name__"].(string)
-		if ok {
-			for key, value := range metric {
-
-				if key != "__name__" {
-					labelMap = append(labelMap, fmt.Sprintf(`%s="%s"`, key, value))
-				}
-			}
-			query := fmt.Sprintf(`%s{%s}`, metricName, strings.Join(labelMap, ","))
-
-			values, ok := result["values"].([]interface{})
-			if ok {
-				for _, v := range values {
-					valArr, ok := v.([]interface{})
-					if ok && len(valArr) == 2 {
-						tmpData := fmt.Sprintf("%s %v %f", query, valArr[1], valArr[0])
-						rawMetricData = append(rawMetricData, tmpData)
-					}
-				}
-			}
-		}
-
 	}
 	rawMetricData = append(rawMetricData, fmt.Sprintf("# EOF"))
 
@@ -109,6 +80,7 @@ func CallPrometheus() {
 }
 
 func main() {
+
 	var rootCmd = &cobra.Command{
 		Use:   "openmetricmigrator",
 		Short: "CLI tool to export Prometheus data in OpenMetrics format",

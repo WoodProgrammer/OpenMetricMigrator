@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -13,6 +15,7 @@ type Prometheus interface {
 	FetchPrometheusData(url string) (int, map[string]interface{})
 	ImportPrometheusData(file, targetDir string) error
 	ExecutePromtoolCommand(args ...string) (string, error)
+	ParsePrometheusMetric(r interface{}) []string
 }
 
 type PromClient struct {
@@ -59,4 +62,34 @@ func (promClient *PromClient) ExecutePromtoolCommand(sourceDir, targetDir string
 		log.Err(err).Msg("cmd.Run() failed with \n")
 	}
 	return string(output), err
+}
+
+func (promClient *PromClient) ParsePrometheusMetric(r interface{}) []string {
+	rawMetricData := []string{}
+	result, _ := r.(map[string]interface{})
+
+	labelMap := []string{}
+	metric, ok := result["metric"].(map[string]interface{})
+	metricName, ok := metric["__name__"].(string)
+	if ok {
+		for key, value := range metric {
+
+			if key != "__name__" {
+				labelMap = append(labelMap, fmt.Sprintf(`%s="%s"`, key, value))
+			}
+		}
+		query := fmt.Sprintf(`%s{%s}`, metricName, strings.Join(labelMap, ","))
+
+		values, ok := result["values"].([]interface{})
+		if ok {
+			for _, v := range values {
+				valArr, ok := v.([]interface{})
+				if ok && len(valArr) == 2 {
+					tmpData := fmt.Sprintf("%s %v %f", query, valArr[1], valArr[0])
+					rawMetricData = append(rawMetricData, tmpData)
+				}
+			}
+		}
+	}
+	return rawMetricData
 }
